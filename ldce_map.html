@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDCE Campus Navigator — Tech Fest 2025</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --neon: #00f5ff;
+    --accent: #ff6b35;
+    --gold: #ffd700;
+    --bg: #050a14;
+    --panel: rgba(5,15,30,0.92);
+    --border: rgba(0,245,255,0.25);
+    --text: #c8e8f0;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* HEADER */
+  #header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(180deg, rgba(5,10,20,0.98) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-area { display: flex; align-items: center; gap: 12px; }
+  .logo-badge {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: conic-gradient(var(--neon), var(--accent), var(--gold), var(--neon));
+    display: flex; align-items: center; justify-content: center;
+    animation: spin 8s linear infinite;
+    font-size: 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .logo-inner {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    position: absolute;
+    font-size: 18px;
+  }
+  .logo-badge-wrap { position: relative; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
+  h1 { font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 900; letter-spacing: 3px; color: var(--neon); text-shadow: 0 0 20px rgba(0,245,255,0.5); }
+  .subtitle { font-family: 'Share Tech Mono'; font-size: 11px; color: var(--accent); letter-spacing: 2px; margin-top: 2px; }
+
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .badge {
+    padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    font-family: 'Share Tech Mono'; letter-spacing: 1px;
+    border: 1px solid var(--neon); color: var(--neon);
+    background: rgba(0,245,255,0.08);
+    animation: pulse-badge 2s ease-in-out infinite;
+  }
+  @keyframes pulse-badge { 0%,100%{box-shadow:0 0 8px rgba(0,245,255,0.3)} 50%{box-shadow:0 0 20px rgba(0,245,255,0.7)} }
+
+  /* CANVAS */
+  #canvas { width: 100vw; height: 100vh; display: block; cursor: grab; }
+  #canvas:active { cursor: grabbing; }
+
+  /* SEARCH BAR */
+  #search-panel {
+    position: fixed; top: 72px; left: 50%; transform: translateX(-50%);
+    z-index: 90; width: 480px; max-width: 90vw;
+  }
+  .search-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 16px;
+    display: flex; align-items: center; gap: 10px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,245,255,0.1);
+    transition: box-shadow 0.3s;
+  }
+  .search-wrap:focus-within { box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 2px rgba(0,245,255,0.4), 0 0 30px rgba(0,245,255,0.1); }
+  .search-icon { color: var(--neon); font-size: 16px; }
+  #search-input {
+    flex: 1; background: none; border: none; outline: none;
+    font-family: 'Rajdhani'; font-size: 15px; color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  #search-input::placeholder { color: rgba(200,232,240,0.35); }
+  #search-results {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-top: 6px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    display: none;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .search-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(0,245,255,0.06);
+    transition: background 0.2s;
+  }
+  .search-item:hover { background: rgba(0,245,255,0.08); }
+  .search-item:last-child { border-bottom: none; }
+  .search-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .search-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .search-cat { font-size: 11px; color: rgba(200,232,240,0.5); margin-left: auto; font-family: 'Share Tech Mono'; }
+
+  /* SIDE PANEL */
+  #side-panel {
+    position: fixed; right: 16px; top: 72px; bottom: 16px;
+    width: 280px; z-index: 80;
+    display: flex; flex-direction: column; gap: 10px;
+    pointer-events: none;
+  }
+  .panel-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    backdrop-filter: blur(20px);
+    pointer-events: all;
+  }
+  .panel-title {
+    font-family: 'Orbitron'; font-size: 10px; letter-spacing: 2px;
+    color: var(--neon); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .panel-title::before { content: ''; width: 3px; height: 12px; background: var(--neon); border-radius: 2px; display: inline-block; }
+
+  /* INFO CARD */
+  #info-card {
+    position: fixed; left: 16px; top: 72px; width: 300px; z-index: 80;
+    display: none;
+  }
+  #info-card .panel-card {
+    border-color: rgba(0,245,255,0.4);
+    box-shadow: 0 0 30px rgba(0,245,255,0.15);
+  }
+  #info-title { font-family: 'Orbitron'; font-size: 14px; color: white; margin-bottom: 4px; }
+  #info-block-num { font-family: 'Share Tech Mono'; font-size: 28px; color: var(--neon); line-height: 1; margin-bottom: 6px; }
+  #info-desc { font-size: 13px; color: rgba(200,232,240,0.8); line-height: 1.5; margin-bottom: 12px; }
+  #info-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+  .tag {
+    padding: 2px 10px; border-radius: 20px; font-size: 10px;
+    font-family: 'Share Tech Mono'; letter-spacing: 1px;
+    border: 1px solid; opacity: 0.9;
+  }
+  #nav-btn {
+    width: 100%; padding: 10px; border-radius: 8px;
+    background: linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,245,255,0.05));
+    border: 1px solid var(--neon);
+    color: var(--neon); font-family: 'Orbitron'; font-size: 11px;
+    letter-spacing: 2px; cursor: pointer;
+    transition: all 0.3s;
+  }
+  #nav-btn:hover { background: rgba(0,245,255,0.15); box-shadow: 0 0 20px rgba(0,245,255,0.3); }
+  #close-info { position: absolute; top: 10px; right: 10px; cursor: pointer; color: rgba(200,232,240,0.4); font-size: 18px; background: none; border: none; }
+  #close-info:hover { color: var(--neon); }
+
+  /* LEGEND */
+  .legend-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; border-radius: 6px; padding: 4px 6px; transition: background 0.2s; }
+  .legend-item:hover { background: rgba(0,245,255,0.06); }
+  .legend-color { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+  .legend-label { font-size: 12px; color: var(--text); }
+
+  /* CONTROLS */
+  #controls {
+    position: fixed; left: 16px; bottom: 16px; z-index: 80;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .ctrl-btn {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--neon); font-size: 18px; cursor: pointer;
+    backdrop-filter: blur(20px);
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  .ctrl-btn:hover { border-color: var(--neon); box-shadow: 0 0 15px rgba(0,245,255,0.3); background: rgba(0,245,255,0.1); }
+
+  /* MINI MAP */
+  #minimap-canvas { border-radius: 8px; display: block; }
+
+  /* NAV MODE */
+  #nav-overlay {
+    display: none;
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    z-index: 90; background: var(--panel);
+    border: 1px solid var(--accent);
+    border-radius: 12px; padding: 12px 20px;
+    text-align: center; backdrop-filter: blur(20px);
+    box-shadow: 0 0 30px rgba(255,107,53,0.3);
+    min-width: 320px;
+  }
+  #nav-from { font-size: 11px; color: var(--accent); font-family: 'Share Tech Mono'; margin-bottom: 4px; }
+  #nav-to { font-size: 15px; font-weight: 600; color: white; }
+  #nav-steps { font-size: 12px; color: rgba(200,232,240,0.6); margin-top: 6px; }
+  #cancel-nav { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(200,232,240,0.4); font-size: 20px; cursor: pointer; }
+  #cancel-nav:hover { color: var(--accent); }
+
+  /* LOADING */
+  #loading {
+    position: fixed; inset: 0; z-index: 1000;
+    background: var(--bg); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+  }
+  .loader-ring {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: var(--neon);
+    border-right-color: var(--accent);
+    animation: spin 1s linear infinite;
+  }
+  .load-text { font-family: 'Orbitron'; font-size: 14px; letter-spacing: 4px; color: var(--neon); }
+  .load-sub { font-family: 'Share Tech Mono'; font-size: 11px; color: rgba(200,232,240,0.4); letter-spacing: 2px; }
+  .load-bar { width: 240px; height: 2px; background: rgba(0,245,255,0.1); border-radius: 2px; overflow: hidden; }
+  .load-fill { height: 100%; background: linear-gradient(90deg, var(--neon), var(--accent)); border-radius: 2px; animation: load-progress 1.5s ease-out forwards; }
+  @keyframes load-progress { from { width: 0 } to { width: 100% } }
+
+  /* TOOLTIP */
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 200;
+    background: rgba(5,10,20,0.95); border: 1px solid rgba(0,245,255,0.4);
+    border-radius: 8px; padding: 6px 12px; font-size: 13px;
+    color: var(--neon); font-family: 'Share Tech Mono';
+    white-space: nowrap; display: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+
+  /* BOTTOM BAR */
+  #bottom-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 70;
+    padding: 8px 20px;
+    background: linear-gradient(0deg, rgba(5,10,20,0.95) 0%, transparent 100%);
+    display: flex; justify-content: center; gap: 6px;
+  }
+  .filter-btn {
+    padding: 5px 14px; border-radius: 20px; font-size: 11px;
+    font-family: 'Share Tech Mono'; letter-spacing: 1px;
+    border: 1px solid rgba(0,245,255,0.2); color: rgba(200,232,240,0.6);
+    background: rgba(5,10,20,0.7); cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    border-color: var(--neon); color: var(--neon);
+    background: rgba(0,245,255,0.1);
+    box-shadow: 0 0 12px rgba(0,245,255,0.2);
+  }
+
+  /* COMPASS */
+  #compass {
+    position: fixed; right: 310px; top: 80px; width: 50px; height: 50px;
+    z-index: 80;
+  }
+  .compass-ring {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: var(--panel); border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    transition: transform 0.5s ease;
+  }
+
+  /* Scanline effect */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 999; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loading">
+  <div class="loader-ring"></div>
+  <div class="load-text">LDCE NAVIGATOR</div>
+  <div class="load-sub">INITIALIZING CAMPUS MAP</div>
+  <div class="load-bar"><div class="load-fill"></div></div>
+</div>
+
+<!-- Header -->
+<div id="header">
+  <div class="logo-area">
+    <div class="logo-badge-wrap">
+      <div class="logo-badge"></div>
+      <div class="logo-inner">🏛️</div>
+    </div>
+    <div>
+      <h1>LDCE NAVIGATOR</h1>
+      <div class="subtitle">L. D. COLLEGE OF ENGINEERING — AHMEDABAD</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="badge">⚡ TECH FEST 2025</div>
+    <div class="badge" style="border-color:var(--accent);color:var(--accent);animation-delay:1s">🗺 3D MAP</div>
+  </div>
+</div>
+
+<!-- Search -->
+<div id="search-panel">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input id="search-input" type="text" placeholder="Search buildings, departments, facilities...">
+    <span style="color:rgba(200,232,240,0.3);font-size:11px;font-family:'Share Tech Mono'">ESC</span>
+  </div>
+  <div id="search-results"></div>
+</div>
+
+<!-- Info Card -->
+<div id="info-card">
+  <div class="panel-card" style="position:relative">
+    <button id="close-info">×</button>
+    <div id="info-block-num">B0</div>
+    <div id="info-title">Main Block</div>
+    <div id="info-desc">Description</div>
+    <div id="info-tags"></div>
+    <button id="nav-btn">⟶ NAVIGATE HERE</button>
+  </div>
+</div>
+
+<!-- Compass -->
+<div id="compass"><div class="compass-ring" id="compass-ring">🧭</div></div>
+
+<!-- Side Panel -->
+<div id="side-panel">
+  <div class="panel-card">
+    <div class="panel-title">LEGEND</div>
+    <div id="legend-list"></div>
+  </div>
+  <div class="panel-card">
+    <div class="panel-title">QUICK ACCESS</div>
+    <div id="quick-list"></div>
+  </div>
+  <div class="panel-card" style="font-family:'Share Tech Mono';font-size:11px;color:rgba(200,232,240,0.4);line-height:1.8">
+    <div class="panel-title">CONTROLS</div>
+    🖱 Drag — Rotate/Pan<br>
+    🖱 Scroll — Zoom In/Out<br>
+    👆 Click — Select Building<br>
+    🔍 Search — Find Location<br>
+    ⟶ — Navigate Between Points
+  </div>
+</div>
+
+<!-- Controls -->
+<div id="controls">
+  <button class="ctrl-btn" id="btn-reset" title="Reset View">⌂</button>
+  <button class="ctrl-btn" id="btn-zoom-in" title="Zoom In">+</button>
+  <button class="ctrl-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+  <button class="ctrl-btn" id="btn-top" title="Top View">⊞</button>
+</div>
+
+<!-- Nav Overlay -->
+<div id="nav-overlay">
+  <button id="cancel-nav">×</button>
+  <div id="nav-from">NAVIGATING TO</div>
+  <div id="nav-to">—</div>
+  <div id="nav-steps">Follow the highlighted path</div>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<!-- Bottom filter bar -->
+<div id="bottom-bar">
+  <button class="filter-btn active" data-filter="all">ALL</button>
+  <button class="filter-btn" data-filter="academic">ACADEMIC</button>
+  <button class="filter-btn" data-filter="hostel">HOSTEL</button>
+  <button class="filter-btn" data-filter="sports">SPORTS</button>
+  <button class="filter-btn" data-filter="facility">FACILITY</button>
+  <button class="filter-btn" data-filter="admin">ADMIN</button>
+</div>
+
+<!-- Canvas -->
+<canvas id="canvas"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// CAMPUS DATA
+// ═══════════════════════════════════════════════════════
+const BUILDINGS = [
+  {
+    id:'B0', label:'Block 0', fullName:'Main Block', blockNum:'B0',
+    desc:'Principal\'s office, Civil Conference Room, and main administrative hub of LDCE.',
+    tags:['Admin','Principal Office','Conference'], category:'admin',
+    color:0x2196f3, emissive:0x0a3a6b,
+    x:0, z:0, w:2.5, h:2, d:1.6, floors:4,
+  },
+  {
+    id:'B1', label:'Block 1', fullName:'LRC Block & Library', blockNum:'B1',
+    desc:'Learning Resource Center with a comprehensive library for students and faculty.',
+    tags:['Library','LRC','Study'], category:'academic',
+    color:0x4caf50, emissive:0x1a4a1a,
+    x:-4.5, z:2, w:2, h:1.5, d:2, floors:3,
+  },
+  {
+    id:'B2', label:'Block 2', fullName:'Electrical, Computer, IC, Civil Dept.',
+    blockNum:'B2',
+    desc:'Houses Electrical Engineering, Computer Engineering, IC, Civil departments and P.G. (WRM).',
+    tags:['EC','CS','Civil','PG'], category:'academic',
+    color:0x9c27b0, emissive:0x3a0a5a,
+    x:-3, z:-2.5, w:1.8, h:2.5, d:4.5, floors:5,
+  },
+  {
+    id:'B3', label:'Block 3', fullName:'Civil Drawing Hall', blockNum:'B3',
+    desc:'Dedicated Civil Engineering drawing hall with drafting equipment.',
+    tags:['Civil','Drawing','Labs'], category:'academic',
+    color:0xff9800, emissive:0x5a3000,
+    x:0.5, z:-3, w:1.8, h:1, d:1.5, floors:2,
+  },
+  {
+    id:'B4', label:'Block 4', fullName:'Mechanical Drawing Hall', blockNum:'B4',
+    desc:'Mechanical Engineering drawing hall for technical drafting and design.',
+    tags:['Mech','Drawing','Labs'], category:'academic',
+    color:0xff5722, emissive:0x5a1a00,
+    x:2.5, z:-3, w:1.8, h:1, d:1.5, floors:2,
+  },
+  {
+    id:'B5', label:'Block 5', fullName:'Students Store, Workshop, Mech. Engg., Automobile',
+    blockNum:'B5',
+    desc:'Mechanical Engineering workshops, automobile lab, students store, Siemens Centre of Excellence, and Welding Centre.',
+    tags:['Mech','Workshop','Automobile','Siemens'], category:'academic',
+    color:0x607d8b, emissive:0x1a2a30,
+    x:1, z:-1.5, w:2.5, h:1.8, d:3, floors:3,
+  },
+  {
+    id:'B6', label:'Block 6', fullName:'Mech. Engg. Applied Mechanics, LAA Office',
+    blockNum:'B6',
+    desc:'Applied Mechanics department and LAA Office.',
+    tags:['Mech','Applied Mechanics','LAA'], category:'academic',
+    color:0x795548, emissive:0x2a1a0a,
+    x:4.5, z:-1, w:1.5, h:1.5, d:4.5, floors:3,
+  },
+  {
+    id:'B7', label:'Block 7', fullName:'Chemical Engg., Rubber, Plastic',
+    blockNum:'B7',
+    desc:'Chemical Engineering department with Rubber and Plastic technology labs.',
+    tags:['Chemical','Rubber','Plastic'], category:'academic',
+    color:0x009688, emissive:0x002a25,
+    x:5, z:1, w:1.5, h:1.8, d:2.5, floors:3,
+  },
+  {
+    id:'B8', label:'Block 8', fullName:'Textile Technology', blockNum:'B8',
+    desc:'Textile Technology department with multiple lab buildings.',
+    tags:['Textile','Technology'], category:'academic',
+    color:0xe91e63, emissive:0x5a0020,
+    x:5, z:-2.5, w:1.2, h:1.5, d:1.2, floors:3,
+  },
+  {
+    id:'B9', label:'Block 9', fullName:'E.C. Engineering, ENV', blockNum:'B9',
+    desc:'Electronics & Communication Engineering and Environmental Engineering.',
+    tags:['EC','Electronics','ENV'], category:'academic',
+    color:0x3f51b5, emissive:0x0a1060,
+    x:6.5, z:-3, w:2, h:2, d:2, floors:4,
+  },
+  {
+    id:'B10', label:'Block 10', fullName:'Annexe Building — BM, IT, MCA',
+    blockNum:'B10',
+    desc:'Annexe Building housing Biomedical, Information Technology, and MCA departments.',
+    tags:['IT','BM','MCA','Annexe'], category:'academic',
+    color:0x00bcd4, emissive:0x003040,
+    x:5.5, z:0.5, w:2, h:2, d:1.5, floors:4,
+  },
+  {
+    id:'VISH', label:'Vishwakarma Hall', fullName:'Vishwakarma Hall', blockNum:'VH',
+    desc:'Vishwakarma Hall — main event and seminar venue on campus.',
+    tags:['Events','Seminar','Hall'], category:'facility',
+    color:0x00f5ff, emissive:0x003a40,
+    x:-3.5, z:-1, w:2, h:1.2, d:1.2, floors:2, isLandmark:true,
+  },
+  {
+    id:'CANTEEN', label:'Canteen', fullName:'Main Canteen', blockNum:'🍽',
+    desc:'The campus canteen serving food and refreshments to students and staff.',
+    tags:['Food','Canteen','Cafeteria'], category:'facility',
+    color:0xffd700, emissive:0x403000,
+    x:0.5, z:-5, w:1.5, h:0.8, d:1.2, floors:1,
+  },
+  {
+    id:'TENNIS', label:'Tennis Court', fullName:'Tennis Court', blockNum:'🎾',
+    desc:'Campus tennis court for sports and recreation.',
+    tags:['Sports','Tennis'], category:'sports',
+    color:0x8bc34a, emissive:0x2a4010,
+    x:-0.5, z:-5.5, w:2.5, h:0.2, d:2, floors:1, isFlat:true,
+  },
+  {
+    id:'CRICKET', label:'Cricket Ground', fullName:'Cricket Ground', blockNum:'🏏',
+    desc:'Main cricket ground of LDCE campus.',
+    tags:['Sports','Cricket'], category:'sports',
+    color:0x795548, emissive:0x2a1008,
+    x:3.5, z:3, w:4.5, h:0.15, d:3.5, floors:1, isFlat:true,
+  },
+  {
+    id:'LAWN', label:'Civil Lawn', fullName:'Civil Lawn', blockNum:'🌿',
+    desc:'Beautiful green lawn in the Civil department area.',
+    tags:['Garden','Lawn','Open Space'], category:'facility',
+    color:0x4caf50, emissive:0x0a2a0a,
+    x:-1, z:3, w:2.5, h:0.2, d:2, floors:1, isFlat:true,
+  },
+  {
+    id:'BOYS_HOSTEL', label:'PG & Boys Hostel', fullName:'PG & Boys Hostel',
+    blockNum:'H♂',
+    desc:'PG and Boys hostel accommodation for students.',
+    tags:['Hostel','Boys','PG'], category:'hostel',
+    color:0x607d8b, emissive:0x1a2530,
+    x:-7, z:-3, w:1.8, h:2, d:3, floors:4,
+  },
+  {
+    id:'GIRLS_HOSTEL', label:'Girls Hostel', fullName:'Girls Hostel',
+    blockNum:'H♀',
+    desc:'Girls hostel accommodation on campus.',
+    tags:['Hostel','Girls'], category:'hostel',
+    color:0xf06292, emissive:0x40101a,
+    x:4, z:-6, w:2, h:2, d:1.5, floors:4,
+  },
+  {
+    id:'MESS', label:'Mess', fullName:'Hostel Mess', blockNum:'🥘',
+    desc:'Hostel mess serving meals to hostel residents.',
+    tags:['Food','Mess','Hostel'], category:'facility',
+    color:0xff9800, emissive:0x402000,
+    x:-1, z:-6, w:2, h:1, d:1.5, floors:1,
+  },
+  {
+    id:'STAFF', label:'Staff Quarter', fullName:'Staff Quarter', blockNum:'SQ',
+    desc:'Residential staff quarters on campus.',
+    tags:['Staff','Residential'], category:'facility',
+    color:0x9e9e9e, emissive:0x1a1a1a,
+    x:-5, z:-5.5, w:1.5, h:1.5, d:1.5, floors:3,
+  },
+];
+
+const CATEGORIES = {
+  academic: { color: '#00f5ff', label: 'Academic' },
+  admin:    { color: '#ffd700', label: 'Administration' },
+  hostel:   { color: '#f06292', label: 'Hostel' },
+  sports:   { color: '#8bc34a', label: 'Sports' },
+  facility: { color: '#ff9800', label: 'Facilities' },
+};
+
+// ═══════════════════════════════════════════════════════
+// THREE.JS SCENE
+// ═══════════════════════════════════════════════════════
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.8;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050a14);
+scene.fog = new THREE.FogExp2(0x050a14, 0.04);
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 18, 18);
+camera.lookAt(0, 0, 0);
+
+// LIGHTS
+const ambient = new THREE.AmbientLight(0x112244, 1.5);
+scene.add(ambient);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.position.set(10, 20, 10);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+dirLight.shadow.camera.near = 0.1;
+dirLight.shadow.camera.far = 80;
+dirLight.shadow.camera.left = -25;
+dirLight.shadow.camera.right = 25;
+dirLight.shadow.camera.top = 25;
+dirLight.shadow.camera.bottom = -25;
+scene.add(dirLight);
+
+// Neon accent lights
+const neonLight1 = new THREE.PointLight(0x00f5ff, 2, 15);
+neonLight1.position.set(-5, 5, -3);
+scene.add(neonLight1);
+
+const neonLight2 = new THREE.PointLight(0xff6b35, 1.5, 12);
+neonLight2.position.set(5, 4, 3);
+scene.add(neonLight2);
+
+// GROUND
+const groundGeo = new THREE.PlaneGeometry(60, 60, 30, 30);
+const groundMat = new THREE.MeshStandardMaterial({
+  color: 0x0a1525,
+  roughness: 0.9,
+  metalness: 0.1,
+});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// GRID
+const gridHelper = new THREE.GridHelper(60, 40, 0x0a2a4a, 0x061525);
+gridHelper.position.y = 0.01;
+scene.add(gridHelper);
+
+// ROADS
+function makeRoad(x, z, w, d, color = 0x0f1f35) {
+  const geo = new THREE.BoxGeometry(w, 0.06, d);
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x, 0.02, z);
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+}
+// Main roads
+makeRoad(-8, 0, 0.4, 28);          // University Road (vertical)
+makeRoad(0, 5, 22, 0.5);           // Top horizontal
+makeRoad(0, -8, 22, 0.5);          // Bottom horizontal
+makeRoad(0, 0, 22, 0.4, 0x0c1c2e); // Center horizontal
+
+// Road markings
+function makeRoadLine(x, z, w, d) {
+  const geo = new THREE.BoxGeometry(w, 0.07, d);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffd700, emissiveIntensity: 0.3 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x, 0.03, z);
+  scene.add(mesh);
+}
+for (let i = -6; i <= 6; i += 1.5) makeRoadLine(-8, i, 0.05, 0.8);
+
+// BUILDINGS
+const buildingMeshes = {};
+const buildingGroup = new THREE.Group();
+
+BUILDINGS.forEach(b => {
+  const group = new THREE.Group();
+
+  // Base/shadow
+  const shadowGeo = new THREE.BoxGeometry(b.w + 0.3, 0.05, b.d + 0.3);
+  const shadowMat = new THREE.MeshStandardMaterial({ color: 0x000000, opacity: 0.3, transparent: true });
+  const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+  shadowMesh.position.set(0, 0.01, 0);
+  group.add(shadowMesh);
+
+  // Building body
+  const bh = b.isFlat ? 0.15 : (b.h + (b.floors - 1) * 0.5);
+  const geo = new THREE.BoxGeometry(b.w, bh, b.d);
+  const mat = new THREE.MeshStandardMaterial({
+    color: b.color,
+    emissive: b.emissive,
+    emissiveIntensity: 0.5,
+    roughness: 0.6,
+    metalness: 0.2,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = bh / 2;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+
+  // Roof glow for landmarks
+  if (b.isLandmark) {
+    const glowGeo = new THREE.BoxGeometry(b.w + 0.1, 0.1, b.d + 0.1);
+    const glowMat = new THREE.MeshStandardMaterial({
+      color: b.color, emissive: b.color, emissiveIntensity: 3,
+      transparent: true, opacity: 0.8,
+    });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.position.y = bh + 0.05;
+    group.add(glowMesh);
+  }
+
+  // Floor lines
+  if (!b.isFlat && b.floors > 1) {
+    for (let f = 1; f < b.floors; f++) {
+      const lineGeo = new THREE.BoxGeometry(b.w + 0.02, 0.04, b.d + 0.02);
+      const lineMat = new THREE.MeshStandardMaterial({ color: 0x000000, opacity: 0.4, transparent: true });
+      const lineMesh = new THREE.Mesh(lineGeo, lineMat);
+      lineMesh.position.y = (bh / b.floors) * f;
+      group.add(lineMesh);
+    }
+  }
+
+  // Label sprite
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 256; labelCanvas.height = 80;
+  const ctx = labelCanvas.getContext('2d');
+  ctx.fillStyle = 'rgba(5,10,20,0.85)';
+  ctx.roundRect(4, 4, 248, 72, 10);
+  ctx.fill();
+  ctx.strokeStyle = `#${b.color.toString(16).padStart(6,'0')}`;
+  ctx.lineWidth = 2;
+  ctx.roundRect(4, 4, 248, 72, 10);
+  ctx.stroke();
+  ctx.font = 'bold 18px Orbitron, monospace';
+  ctx.fillStyle = `#${b.color.toString(16).padStart(6,'0')}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(b.label, 128, 32);
+  ctx.font = '13px Rajdhani, sans-serif';
+  ctx.fillStyle = 'rgba(200,232,240,0.7)';
+  ctx.fillText(b.fullName.substring(0, 28), 128, 52);
+  
+  const texture = new THREE.CanvasTexture(labelCanvas);
+  const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.scale.set(2.5, 0.8, 1);
+  sprite.position.y = bh + 1;
+  sprite.renderOrder = 999;
+  group.add(sprite);
+  group.labelSprite = sprite;
+
+  group.position.set(b.x, 0, b.z);
+  group.userData = { ...b, mesh, bh };
+  buildingGroup.add(group);
+  buildingMeshes[b.id] = group;
+});
+
+scene.add(buildingGroup);
+
+// TREES
+function makeTree(x, z) {
+  const g = new THREE.Group();
+  const trunkGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.5, 6);
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });
+  const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+  trunk.position.y = 0.25;
+  g.add(trunk);
+  const leafGeo = new THREE.SphereGeometry(0.3, 6, 5);
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, emissive: 0x0a2a0a, emissiveIntensity: 0.5 });
+  const leaf = new THREE.Mesh(leafGeo, leafMat);
+  leaf.position.y = 0.75;
+  leaf.scale.y = 1.3;
+  g.add(leaf);
+  g.position.set(x, 0, z);
+  scene.add(g);
+}
+const treePositions = [[-6,2],[-6,-1],[-6,-4],[-2,5],[2,5],[6,5],[-4,6],[0,6],[4,6],[-2,-7],[2,-7],[-5,0],[-5,-6],[7,-1],[7,2]];
+treePositions.forEach(([x,z]) => makeTree(x, z));
+
+// PATH SYSTEM
+let pathLine = null;
+const pathMaterial = new THREE.LineBasicMaterial({ color: 0x00f5ff, linewidth: 3 });
+
+function showPath(from, to) {
+  if (pathLine) { scene.remove(pathLine); pathLine = null; }
+  const fromB = BUILDINGS.find(b => b.id === from);
+  const toB = BUILDINGS.find(b => b.id === to);
+  if (!fromB || !toB) return;
+
+  // Simple L-shaped path
+  const mid1 = new THREE.Vector3(fromB.x, 0.15, fromB.z);
+  const mid2 = new THREE.Vector3(toB.x, 0.15, fromB.z);
+  const end = new THREE.Vector3(toB.x, 0.15, toB.z);
+
+  const points = [mid1, mid2, end];
+  const geo = new THREE.BufferGeometry().setFromPoints(points);
+  pathLine = new THREE.Line(geo, pathMaterial);
+  pathLine.renderOrder = 10;
+  scene.add(pathLine);
+
+  // Animated dots along path
+  [0.25, 0.5, 0.75].forEach((t, i) => {
+    const dotGeo = new THREE.SphereGeometry(0.15, 8, 8);
+    const dotMat = new THREE.MeshStandardMaterial({ color: 0x00f5ff, emissive: 0x00f5ff, emissiveIntensity: 3 });
+    const dot = new THREE.Mesh(dotGeo, dotMat);
+    const interp1 = new THREE.Vector3().lerpVectors(mid1, mid2, Math.min(t * 2, 1));
+    const interp2 = new THREE.Vector3().lerpVectors(mid2, end, Math.max(t * 2 - 1, 0));
+    dot.position.copy(t < 0.5 ? interp1 : interp2);
+    dot.position.y = 0.2;
+    dot.userData.pathDot = true;
+    dot.userData.offset = i * 2;
+    scene.add(dot);
+  });
+}
+
+function clearPath() {
+  if (pathLine) { scene.remove(pathLine); pathLine = null; }
+  scene.children.filter(c => c.userData.pathDot).forEach(c => scene.remove(c));
+}
+
+// ═══════════════════════════════════════════════════════
+// CAMERA CONTROLS (Orbit-style)
+// ═══════════════════════════════════════════════════════
+let isDragging = false;
+let prevMouse = { x: 0, y: 0 };
+let spherical = { theta: 0.3, phi: 0.9, radius: 22 };
+let target = new THREE.Vector3(0, 0, 0);
+let targetSpherical = { ...spherical };
+
+function updateCamera() {
+  const x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+  const y = spherical.radius * Math.cos(spherical.phi);
+  const z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+  camera.position.set(target.x + x, y, target.z + z);
+  camera.lookAt(target);
+}
+
+canvas.addEventListener('mousedown', e => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
+window.addEventListener('mouseup', () => isDragging = false);
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - prevMouse.x;
+  const dy = e.clientY - prevMouse.y;
+  spherical.theta -= dx * 0.005;
+  spherical.phi = Math.max(0.3, Math.min(1.4, spherical.phi + dy * 0.005));
+  prevMouse = { x: e.clientX, y: e.clientY };
+  updateCamera();
+  document.getElementById('compass-ring').style.transform = `rotate(${-spherical.theta * 180 / Math.PI}deg)`;
+});
+canvas.addEventListener('wheel', e => {
+  spherical.radius = Math.max(5, Math.min(50, spherical.radius + e.deltaY * 0.03));
+  updateCamera();
+});
+// Touch
+let lastTouchDist = 0;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  else { isDragging = true; prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+});
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    spherical.radius = Math.max(5, Math.min(50, spherical.radius - (dist - lastTouchDist) * 0.05));
+    lastTouchDist = dist; updateCamera();
+  } else if (isDragging) {
+    const dx = e.touches[0].clientX - prevMouse.x;
+    const dy = e.touches[0].clientY - prevMouse.y;
+    spherical.theta -= dx * 0.005;
+    spherical.phi = Math.max(0.3, Math.min(1.4, spherical.phi + dy * 0.005));
+    prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    updateCamera();
+  }
+}, { passive: false });
+canvas.addEventListener('touchend', () => isDragging = false);
+
+// CONTROL BUTTONS
+document.getElementById('btn-reset').onclick = () => {
+  spherical = { theta: 0.3, phi: 0.9, radius: 22 };
+  target.set(0, 0, 0);
+  updateCamera();
+};
+document.getElementById('btn-zoom-in').onclick = () => {
+  spherical.radius = Math.max(5, spherical.radius - 3);
+  updateCamera();
+};
+document.getElementById('btn-zoom-out').onclick = () => {
+  spherical.radius = Math.min(50, spherical.radius + 3);
+  updateCamera();
+};
+document.getElementById('btn-top').onclick = () => {
+  spherical.phi = 0.3;
+  updateCamera();
+};
+
+// ═══════════════════════════════════════════════════════
+// RAYCASTING / CLICK
+// ═══════════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let selectedBuilding = null;
+let hovered = null;
+const tooltip = document.getElementById('tooltip');
+
+function getMeshes() {
+  const meshes = [];
+  buildingGroup.children.forEach(g => {
+    g.children.forEach(c => { if (c.isMesh) meshes.push(c); });
+  });
+  return meshes;
+}
+
+canvas.addEventListener('mousemove', e => {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(getMeshes());
+  if (hits.length > 0) {
+    const g = hits[0].object.parent;
+    if (g.userData.id) {
+      canvas.style.cursor = 'pointer';
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top = (e.clientY - 8) + 'px';
+      tooltip.textContent = g.userData.fullName;
+      hovered = g.userData.id;
+    }
+  } else {
+    canvas.style.cursor = 'grab';
+    tooltip.style.display = 'none';
+    hovered = null;
+  }
+});
+
+canvas.addEventListener('click', e => {
+  if (Math.abs(e.movementX) > 3 || Math.abs(e.movementY) > 3) return;
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(getMeshes());
+  if (hits.length > 0) {
+    const g = hits[0].object.parent;
+    if (g.userData.id) selectBuilding(g.userData.id);
+  }
+});
+
+function selectBuilding(id) {
+  selectedBuilding = id;
+  const b = BUILDINGS.find(x => x.id === id);
+  if (!b) return;
+
+  // Animate camera toward building
+  target.set(b.x, 0, b.z);
+  spherical.radius = 12;
+  updateCamera();
+
+  // Show info card
+  const card = document.getElementById('info-card');
+  card.style.display = 'block';
+  document.getElementById('info-block-num').textContent = b.blockNum;
+  document.getElementById('info-block-num').style.color = `#${b.color.toString(16).padStart(6,'0')}`;
+  document.getElementById('info-title').textContent = b.fullName;
+  document.getElementById('info-desc').textContent = b.desc;
+  const tagsEl = document.getElementById('info-tags');
+  tagsEl.innerHTML = b.tags.map(t => `<span class="tag" style="color:#${b.color.toString(16).padStart(6,'0')};border-color:#${b.color.toString(16).padStart(6,'0')}33">${t}</span>`).join('');
+
+  // Highlight
+  buildingGroup.children.forEach(g => {
+    const mesh = g.children.find(c => c.isMesh && c.geometry.type === 'BoxGeometry');
+    if (mesh) {
+      mesh.material.emissiveIntensity = g.userData.id === id ? 1.5 : 0.3;
+    }
+  });
+}
+
+document.getElementById('close-info').onclick = () => {
+  document.getElementById('info-card').style.display = 'none';
+  selectedBuilding = null;
+  buildingGroup.children.forEach(g => {
+    const mesh = g.children.find(c => c.isMesh && c.geometry.type === 'BoxGeometry');
+    if (mesh) mesh.material.emissiveIntensity = 0.5;
+  });
+};
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+let navTarget = null;
+
+document.getElementById('nav-btn').onclick = () => {
+  if (!selectedBuilding) return;
+  const b = BUILDINGS.find(x => x.id === selectedBuilding);
+  navTarget = selectedBuilding;
+  document.getElementById('nav-overlay').style.display = 'block';
+  document.getElementById('nav-to').textContent = b.fullName;
+  document.getElementById('nav-steps').textContent = `From Main Gate → ${b.label}`;
+  showPath('B0', selectedBuilding);
+};
+
+document.getElementById('cancel-nav').onclick = () => {
+  document.getElementById('nav-overlay').style.display = 'none';
+  navTarget = null;
+  clearPath();
+};
+
+// ═══════════════════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════════════════
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase().trim();
+  if (!q) { searchResults.style.display = 'none'; return; }
+  const matches = BUILDINGS.filter(b =>
+    b.label.toLowerCase().includes(q) ||
+    b.fullName.toLowerCase().includes(q) ||
+    b.tags.some(t => t.toLowerCase().includes(q)) ||
+    b.desc.toLowerCase().includes(q)
+  );
+  if (matches.length === 0) { searchResults.style.display = 'none'; return; }
+  searchResults.style.display = 'block';
+  searchResults.innerHTML = matches.slice(0,8).map(b => `
+    <div class="search-item" onclick="selectBuildingFromSearch('${b.id}')">
+      <div class="search-dot" style="background:#${b.color.toString(16).padStart(6,'0')}"></div>
+      <div class="search-name">${b.fullName}</div>
+      <div class="search-cat">${b.category.toUpperCase()}</div>
+    </div>
+  `).join('');
+});
+
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { searchResults.style.display = 'none'; searchInput.value = ''; }
+});
+
+window.selectBuildingFromSearch = (id) => {
+  searchResults.style.display = 'none';
+  searchInput.value = '';
+  selectBuilding(id);
+};
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#search-panel')) searchResults.style.display = 'none';
+});
+
+// ═══════════════════════════════════════════════════════
+// LEGEND & QUICK ACCESS
+// ═══════════════════════════════════════════════════════
+const legendList = document.getElementById('legend-list');
+Object.entries(CATEGORIES).forEach(([key, cat]) => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-color" style="background:${cat.color}"></div><div class="legend-label">${cat.label}</div>`;
+  item.onclick = () => filterBuildings(key);
+  legendList.appendChild(item);
+});
+
+const quickList = document.getElementById('quick-list');
+const quickBuildings = ['VISH', 'CANTEEN', 'B0', 'B2', 'CRICKET', 'BOYS_HOSTEL'];
+quickBuildings.forEach(id => {
+  const b = BUILDINGS.find(x => x.id === id);
+  if (!b) return;
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-color" style="background:#${b.color.toString(16).padStart(6,'0')}"></div><div class="legend-label" style="font-size:12px">${b.fullName.substring(0,22)}</div>`;
+  item.onclick = () => selectBuilding(id);
+  quickList.appendChild(item);
+});
+
+// ═══════════════════════════════════════════════════════
+// FILTER
+// ═══════════════════════════════════════════════════════
+function filterBuildings(cat) {
+  buildingGroup.children.forEach(g => {
+    const show = cat === 'all' || g.userData.category === cat;
+    g.visible = show;
+  });
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterBuildings(btn.dataset.filter);
+  };
+});
+
+// ═══════════════════════════════════════════════════════
+// ANIMATE
+// ═══════════════════════════════════════════════════════
+let time = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  time += 0.016;
+
+  // Pulse neon lights
+  neonLight1.intensity = 1.5 + Math.sin(time * 1.5) * 0.5;
+  neonLight2.intensity = 1.2 + Math.cos(time * 1.2) * 0.4;
+
+  // Pulse landmark buildings
+  buildingGroup.children.forEach(g => {
+    if (g.userData.isLandmark) {
+      const glowMesh = g.children.find(c => c.isMesh && c.geometry.type === 'BoxGeometry' && c.position.y > g.userData.bh * 0.9);
+      if (glowMesh) glowMesh.material.emissiveIntensity = 2 + Math.sin(time * 3) * 1;
+    }
+    // Hover scale
+    if (g.userData.id === hovered && !g.userData.isFlat) {
+      g.scale.y = THREE.MathUtils.lerp(g.scale.y, 1.06, 0.1);
+    } else {
+      g.scale.y = THREE.MathUtils.lerp(g.scale.y, 1, 0.1);
+    }
+  });
+
+  // Animate path dots
+  scene.children.filter(c => c.userData.pathDot).forEach(dot => {
+    dot.position.y = 0.2 + Math.sin(time * 4 + dot.userData.offset) * 0.1;
+    dot.material.emissiveIntensity = 2 + Math.sin(time * 5 + dot.userData.offset) * 1;
+  });
+
+  // Label fade by distance
+  buildingGroup.children.forEach(g => {
+    if (g.labelSprite) {
+      const dist = camera.position.distanceTo(g.position);
+      g.labelSprite.material.opacity = dist < 15 ? 1 : Math.max(0, 1 - (dist - 15) / 10);
+    }
+  });
+
+  renderer.render(scene, camera);
+}
+
+// ═══════════════════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════════════════
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ═══════════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════════
+updateCamera();
+animate();
+
+setTimeout(() => {
+  document.getElementById('loading').style.opacity = '0';
+  document.getElementById('loading').style.transition = 'opacity 0.6s';
+  setTimeout(() => document.getElementById('loading').style.display = 'none', 600);
+}, 2000);
+</script>
+</body>
+</html>
